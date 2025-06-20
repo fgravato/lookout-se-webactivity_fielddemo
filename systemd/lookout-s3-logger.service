@@ -1,0 +1,42 @@
+[Unit]
+Description=Lookout Web Activity S3 Logger
+Documentation=https://github.com/your-org/lookout-webactivity-demo
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=lookout
+Group=lookout
+WorkingDirectory=/opt/lookout-s3-logger
+ExecStart=/opt/lookout-s3-logger/venv/bin/python /opt/lookout-s3-logger/lookout_s3_logger.py
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/opt/lookout-s3-logger/.env
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/lookout-s3-logger /var/log
+CapabilityBoundingSet=
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lookout-s3-logger
+
+[Install]
+WantedBy=multi-user.target

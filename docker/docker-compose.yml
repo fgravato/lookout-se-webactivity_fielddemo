@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  lookout-s3-logger:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: lookout-s3-logger
+    restart: unless-stopped
+    
+    environment:
+      # Lookout API Configuration
+      - LOOKOUT_ACCESS_TOKEN=${LOOKOUT_ACCESS_TOKEN}
+      - LOOKOUT_API_URL=${LOOKOUT_API_URL:-https://mtp.lookout.com/data/web-access-feed}
+      
+      # AWS Configuration
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - FIREHOSE_STREAM_NAME=${FIREHOSE_STREAM_NAME}
+      
+      # Service Configuration
+      - POLL_INTERVAL=${POLL_INTERVAL:-300}
+      - BUFFER_SIZE_LIMIT=${BUFFER_SIZE_LIMIT:-500}
+      - BUFFER_TIME_LIMIT=${BUFFER_TIME_LIMIT:-300}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - RETRY_DELAY=${RETRY_DELAY:-60}
+    
+    volumes:
+      - logs:/var/log
+      - ./aws_credentials:/root/.aws:ro  # Optional: for AWS credentials file
+    
+    # Optional: Expose metrics port
+    ports:
+      - "8080:8080"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  logs:
+    driver: local
+
+networks:
+  default:
+    name: lookout-network
