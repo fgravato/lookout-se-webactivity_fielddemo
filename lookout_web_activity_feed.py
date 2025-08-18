@@ -2,6 +2,8 @@ import os
 import sys
 import argparse
 import requests
+import ipaddress
+import logging
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
@@ -56,7 +58,7 @@ class LookoutAPIClient:
         
         try:
             print("🔄 Refreshing access token...")
-            response = requests.post(self.oauth_url, headers=headers, data=data, timeout=15)
+            response = requests.post(self.oauth_url, headers=headers, data=data, timeout=30)
             response.raise_for_status()
             token_data = response.json()
             
@@ -85,25 +87,60 @@ class LookoutAPIClient:
                     error_msg = f"Token refresh failed: {e.response.text}"
             raise SystemExit(f"❌ {error_msg}")
     
-    def _make_authenticated_request(self, url, params=None, retry_on_auth_error=True):
+    def _make_authenticated_request(self, url, params=None, retry_on_auth_error=True, debug=False):
         """Make an authenticated request with automatic token refresh on 401 errors"""
         headers = {
             'Authorization': f'Bearer {self.access_token}'
         }
         
+        if debug:
+            print(f"🔍 DEBUG: Making request to: {url}")
+            print(f"🔍 DEBUG: Parameters: {params}")
+            print(f"🔍 DEBUG: Timeout set to: 720 seconds (12 minutes)")
+            start_time = datetime.now()
+        
         try:
-            response = requests.get(url, headers=headers, params=params, timeout=15)
+            response = requests.get(url, headers=headers, params=params, timeout=720)
+            
+            if debug:
+                elapsed_time = (datetime.now() - start_time).total_seconds()
+                print(f"🔍 DEBUG: Request completed in {elapsed_time:.2f} seconds")
+                print(f"🔍 DEBUG: Response status: {response.status_code}")
+                print(f"🔍 DEBUG: Response headers: {dict(response.headers)}")
             
             # If we get a 401 and haven't already retried, refresh token and try again
             if response.status_code == 401 and retry_on_auth_error:
                 print("🔄 Access token expired, refreshing...")
                 self._refresh_access_token()
-                return self._make_authenticated_request(url, params, retry_on_auth_error=False)
+                return self._make_authenticated_request(url, params, retry_on_auth_error=False, debug=debug)
             
             response.raise_for_status()
-            return response.json()
             
+            # Try to parse JSON response
+            try:
+                response_data = response.json()
+                if debug:
+                    event_count = len(response_data.get('lookup_access_events', []))
+                    print(f"🔍 DEBUG: Response contains {event_count} events")
+                return response_data
+            except ValueError as json_error:
+                if debug:
+                    print(f"🔍 DEBUG: Failed to parse JSON response")
+                    print(f"🔍 DEBUG: Response content type: {response.headers.get('content-type', 'unknown')}")
+                    print(f"🔍 DEBUG: Response content (first 500 chars): {response.text[:500]}")
+                raise ValueError(f"Invalid JSON response from API. Content-Type: {response.headers.get('content-type', 'unknown')}. Response: {response.text[:200]}...")
+            
+        except requests.exceptions.Timeout as e:
+            elapsed_time = (datetime.now() - start_time).total_seconds() if debug else "unknown"
+            error_msg = f"Request timed out after {elapsed_time} seconds. The API response is taking longer than the 720-second (12-minute) timeout."
+            if debug:
+                print(f"🔍 DEBUG: Timeout occurred after {elapsed_time} seconds")
+            raise SystemExit(f"❌ {error_msg}")
         except RequestException as e:
+            if debug:
+                elapsed_time = (datetime.now() - start_time).total_seconds()
+                print(f"🔍 DEBUG: Request failed after {elapsed_time} seconds")
+            
             error_msg = f"API request failed: {e}"
             if hasattr(e, 'response') and e.response is not None:
                 try:
@@ -113,14 +150,30 @@ class LookoutAPIClient:
                     error_msg = f"API request failed: {e.response.text}"
             raise SystemExit(f"❌ {error_msg}")
 
-    def fetch_events(self, start_time=None):
+    def fetch_events(self, start_time=None, debug=False):
         """Fetch web access events from Lookout API"""
-        # Use the correct parameter name from API documentation: start_interval
+        # Use the correct parameter name from API documentation: start_time
         params = {}
         if start_time:
-            params['start_interval'] = start_time
+            params['start_time'] = start_time
         
-        return self._make_authenticated_request(self.base_url, params)
+        return self._make_authenticated_request(self.base_url, params, debug=debug)
+
+def get_ip_type_and_mode(ip_address):
+    """Determine IP type and DNS mode based on resolved IP address"""
+    if not ip_address or ip_address.strip() == "":
+        return "VPN Mode", "N/A"
+    
+    try:
+        ip_obj = ipaddress.ip_address(ip_address.strip())
+        if isinstance(ip_obj, ipaddress.IPv4Address):
+            return "SecureDNS", "IPv4"
+        elif isinstance(ip_obj, ipaddress.IPv6Address):
+            return "SecureDNS", "IPv6"
+    except ValueError:
+        return "VPN Mode", "N/A"
+    
+    return "Unknown", "Unknown"
 
 def format_events(events, limit=None):
     """Format events into a readable table"""
@@ -133,30 +186,44 @@ def format_events(events, limit=None):
         timestamp_ms = event['timestamp']
         readable_time = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
         
+        # Get IP address, DNS mode, and IP type
+        resolved_ip = event.get('resolved_ip_address', '')
+        dns_mode, ip_type = get_ip_type_and_mode(resolved_ip)
+        
+        # Format IP display based on mode
+        if dns_mode == "VPN Mode":
+            ip_display = "N/A"
+        else:
+            ip_display = f"{resolved_ip} ({ip_type})"
+        
         table_data.append([
             readable_time,
             event['device_guid'][:8] + '...' + event['device_guid'][-3:],
             event['region'],
             event['request_url'],  # Fixed: use request_url not request_uri
+            dns_mode,
+            ip_display,
             event['id'][:8] + '...'  # Truncate long event IDs
         ])
     
     return tabulate(
         table_data,
-        headers=['Timestamp', 'Device', 'Region', 'URL', 'Event ID'],
+        headers=['Timestamp', 'Device', 'Region', 'URL', 'DNS Mode', 'Resolved IP', 'Event ID'],
         tablefmt='fancy_grid',
-        maxcolwidths=[None, 15, None, 40, None]
+        maxcolwidths=[None, 15, None, 35, 12, 25, None]
     )
 
 def main():
     parser = argparse.ArgumentParser(description='Lookout Web Access Feed API Client')
     parser.add_argument('--start-time', help='Start time in format: YYYY-M-DDTHH:MM:SS+HH:MM (e.g., 2025-6-13T00:00:00+00:00)')
+    parser.add_argument('--last-1h', action='store_true', help='Show events from last 1 hour')
     parser.add_argument('--last-12h', action='store_true', help='Show events from last 12 hours')
     parser.add_argument('--last-24h', action='store_true', help='Show events from last 24 hours')
     parser.add_argument('--last-48h', action='store_true', help='Show events from last 48 hours')
     parser.add_argument('--limit', type=int, default=10, help='Number of events to display (default: 10)')
     parser.add_argument('--format', choices=['table', 'json'], default='table', help='Output format')
     parser.add_argument('--force-refresh', action='store_true', help='Force refresh access token before making API calls')
+    parser.add_argument('--debug', action='store_true', help='Enable debug output to troubleshoot API requests')
     
     args = parser.parse_args()
     
@@ -176,7 +243,10 @@ def main():
     start_time = None
     time_description = "Recent events"
     
-    if args.last_12h:
+    if args.last_1h:
+        start_time = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        time_description = "Last 1 hour"
+    elif args.last_12h:
         start_time = (datetime.now(timezone.utc) - timedelta(hours=12)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
         time_description = "Last 12 hours"
     elif args.last_24h:
@@ -190,14 +260,22 @@ def main():
         time_description = f"{args.start_time} to present"
     
     try:
-        events = client.fetch_events(start_time=start_time)
+        events = client.fetch_events(start_time=start_time, debug=args.debug)
         
         print(f"=== Lookout Web Access Activity Feed ===")
         print(f"Time range: {time_description}\n")
         
         if args.format == 'json':
             import json
-            print(json.dumps(events, indent=2))
+            # Enhance JSON output with DNS mode and IP type flags
+            enhanced_events = events.copy()
+            if 'lookup_access_events' in enhanced_events:
+                for event in enhanced_events['lookup_access_events']:
+                    ip_address = event.get('resolved_ip_address', '')
+                    dns_mode, ip_type = get_ip_type_and_mode(ip_address)
+                    event['dns_mode'] = dns_mode
+                    event['ip_type'] = ip_type
+            print(json.dumps(enhanced_events, indent=2))
         else:
             print(format_events(events, limit=args.limit))
             
