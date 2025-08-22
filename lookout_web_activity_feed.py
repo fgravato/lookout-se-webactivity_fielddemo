@@ -4,6 +4,8 @@ import argparse
 import requests
 import ipaddress
 import logging
+import csv
+import io
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
@@ -213,6 +215,48 @@ def format_events(events, limit=None):
         maxcolwidths=[None, 15, None, 35, 12, 25, None]
     )
 
+def format_events_csv(events, limit=None):
+    """Format events into CSV format"""
+    if not events.get('lookup_access_events'):
+        return "Timestamp,Device,Region,URL,DNS Mode,Resolved IP,IP Type,Event ID\n"
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(['Timestamp', 'Device', 'Region', 'URL', 'DNS Mode', 'Resolved IP', 'IP Type', 'Event ID'])
+    
+    # Write data rows
+    for event in events['lookup_access_events'][:limit]:
+        # Convert timestamp from milliseconds to readable format
+        timestamp_ms = event['timestamp']
+        readable_time = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
+        
+        # Get IP address, DNS mode, and IP type
+        resolved_ip = event.get('resolved_ip_address', '')
+        dns_mode, ip_type = get_ip_type_and_mode(resolved_ip)
+        
+        # Format IP display for CSV (separate IP and type into different columns)
+        if dns_mode == "VPN Mode":
+            ip_display = "N/A"
+            ip_type_display = "N/A"
+        else:
+            ip_display = resolved_ip
+            ip_type_display = ip_type
+        
+        writer.writerow([
+            readable_time,
+            event['device_guid'],  # Full device GUID for CSV
+            event['region'],
+            event['request_url'],
+            dns_mode,
+            ip_display,
+            ip_type_display,
+            event['id']  # Full event ID for CSV
+        ])
+    
+    return output.getvalue()
+
 def main():
     parser = argparse.ArgumentParser(description='Lookout Web Access Feed API Client')
     parser.add_argument('--start-time', help='Start time in format: YYYY-M-DDTHH:MM:SS+HH:MM (e.g., 2025-6-13T00:00:00+00:00)')
@@ -221,7 +265,7 @@ def main():
     parser.add_argument('--last-24h', action='store_true', help='Show events from last 24 hours')
     parser.add_argument('--last-48h', action='store_true', help='Show events from last 48 hours')
     parser.add_argument('--limit', type=int, default=10, help='Number of events to display (default: 10)')
-    parser.add_argument('--format', choices=['table', 'json'], default='table', help='Output format')
+    parser.add_argument('--format', choices=['table', 'json', 'csv'], default='table', help='Output format')
     parser.add_argument('--force-refresh', action='store_true', help='Force refresh access token before making API calls')
     parser.add_argument('--debug', action='store_true', help='Enable debug output to troubleshoot API requests')
     
@@ -276,6 +320,8 @@ def main():
                     event['dns_mode'] = dns_mode
                     event['ip_type'] = ip_type
             print(json.dumps(enhanced_events, indent=2))
+        elif args.format == 'csv':
+            print(format_events_csv(events, limit=args.limit))
         else:
             print(format_events(events, limit=args.limit))
             
