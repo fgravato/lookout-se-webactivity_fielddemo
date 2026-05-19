@@ -22,10 +22,12 @@ try:
     DEVICE_MAPPING_AVAILABLE = True
 except ImportError:
     DEVICE_MAPPING_AVAILABLE = False
-    print("⚠️  Device mapping not available. Run 'pip install' and ensure device_database.py exists.")
+    if os.getenv('LOG_LEVEL', 'INFO').upper() == 'DEBUG':
+        print("⚠️  Device mapping not available. Run 'pip install' and ensure device_database.py exists.")
 
 # Load environment variables
 load_dotenv()
+_DEBUG_LOGGING = os.getenv('LOG_LEVEL', 'INFO').upper() == 'DEBUG'
 
 class LookoutAPIClient:
     """
@@ -35,11 +37,15 @@ class LookoutAPIClient:
     3. Device-to-user mapping from local database
     """
     
-    def __init__(self, enable_device_mapping=True):
+    def __init__(self, enable_device_mapping=True, timeout=120, max_retries=3):
         # API endpoints
         self.web_access_feed_url = 'https://mtp.lookout.com/data/web-access-feed'
         self.oauth_url = 'https://api.lookout.com/oauth2/token'
         self.mra_base_url = 'https://api.lookout.com'
+        
+        # Request configuration
+        self.timeout = timeout
+        self.max_retries = max_retries
         
         # Authentication
         self.application_key = self._get_application_key()
@@ -50,9 +56,11 @@ class LookoutAPIClient:
         if enable_device_mapping and DEVICE_MAPPING_AVAILABLE:
             try:
                 self.device_db = DeviceDatabase()
-                print("✅ Device mapping database connected")
+                if _DEBUG_LOGGING:
+                    print("✅ Device mapping database connected")
             except Exception as e:
-                print(f"⚠️  Device mapping database unavailable: {e}")
+                if _DEBUG_LOGGING:
+                    print(f"⚠️  Device mapping database unavailable: {e}")
         
     def _get_application_key(self):
         """Get application key from environment or file"""
@@ -71,6 +79,53 @@ class LookoutAPIClient:
             pass
             
         return None
+    
+    def _make_request_with_retry(self, method, url, **kwargs):
+        """Make HTTP request with retry logic and configurable timeout"""
+        import time
+        
+        # Set default timeout if not provided
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = self.timeout
+        
+        last_exception = None
+        for attempt in range(self.max_retries):
+            try:
+                if method.upper() == 'GET':
+                    response = requests.get(url, **kwargs)
+                elif method.upper() == 'POST':
+                    response = requests.post(url, **kwargs)
+                else:
+                    raise ValueError(f"Unsupported HTTP method: {method}")
+                
+                response.raise_for_status()
+                return response
+                
+            except requests.exceptions.Timeout as e:
+                last_exception = e
+                if attempt < self.max_retries - 1:
+                    wait_time = 2 ** attempt  # Exponential backoff
+                    if _DEBUG_LOGGING:
+                        print(f"⏱️  Request timeout (attempt {attempt + 1}/{self.max_retries}), retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    if _DEBUG_LOGGING:
+                        print(f"❌ Request failed after {self.max_retries} attempts due to timeout")
+                    
+            except requests.exceptions.RequestException as e:
+                last_exception = e
+                if attempt < self.max_retries - 1 and hasattr(e, 'response') and e.response and e.response.status_code >= 500:
+                    wait_time = 2 ** attempt  # Exponential backoff for server errors
+                    if _DEBUG_LOGGING:
+                        print(f"🔄 Server error (attempt {attempt + 1}/{self.max_retries}), retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    break
+        
+        # If we get here, all retries failed
+        raise last_exception
     
     def _get_or_refresh_access_token(self):
         """Get existing access token or refresh using application key"""
@@ -92,15 +147,17 @@ class LookoutAPIClient:
         if self.application_key:
             return self._exchange_application_key_for_token()
             
-        # Fallback to hardcoded token (for demo purposes)
-        return 'your_jwt_token_here'
+        raise ValueError(
+            "No JWT token available. Check WEB_ACTIVITY_KEY in your .env file."
+        )
 
     def _exchange_application_key_for_token(self, scope=None):
         """
         Exchange application key for access token using OAuth2 client credentials flow
         This follows the MRA API pattern described in the documentation
         """
-        print("🔑 Exchanging application key for access token...")
+        if _DEBUG_LOGGING:
+            print("🔑 Exchanging application key for access token...")
         
         headers = {
             'Authorization': f'Bearer {self.application_key}',
@@ -116,9 +173,7 @@ class LookoutAPIClient:
             data['scope'] = scope
         
         try:
-            response = requests.post(self.oauth_url, headers=headers, data=data, timeout=15)
-            response.raise_for_status()
-            
+            response = self._make_request_with_retry('POST', self.oauth_url, headers=headers, data=data)
             token_data = response.json()
             access_token = token_data.get('access_token')
             expires_in = token_data.get('expires_in', 7200)
@@ -138,10 +193,11 @@ class LookoutAPIClient:
                         'obtained_at': datetime.now(timezone.utc).isoformat()
                     }, f, indent=2)
                 
-                print(f"✅ Access token obtained successfully!")
-                print(f"   Token type: {token_data.get('token_type', 'Bearer')}")
-                print(f"   Expires in: {expires_in} seconds")
-                print(f"   Scope: {token_data.get('scope', 'default')}")
+                if _DEBUG_LOGGING:
+                    print(f"✅ Access token obtained successfully!")
+                    print(f"   Token type: {token_data.get('token_type', 'Bearer')}")
+                    print(f"   Expires in: {expires_in} seconds")
+                    print(f"   Scope: {token_data.get('scope', 'default')}")
                 
                 return access_token
             else:
@@ -169,8 +225,7 @@ class LookoutAPIClient:
             params['start_interval'] = start_time
         
         try:
-            response = requests.get(self.web_access_feed_url, headers=headers, params=params, timeout=15)
-            response.raise_for_status()
+            response = self._make_request_with_retry('GET', self.web_access_feed_url, headers=headers, params=params)
             events_data = response.json()
             
             # Add user mapping if available and requested
@@ -181,12 +236,12 @@ class LookoutAPIClient:
             
         except RequestException as e:
             if hasattr(e, 'response') and e.response and e.response.status_code == 401:
-                print("🔄 Access token expired, attempting to refresh...")
+                if _DEBUG_LOGGING:
+                    print("🔄 Access token expired, attempting to refresh...")
                 if self.application_key:
                     self.access_token = self._exchange_application_key_for_token()
                     headers['Authorization'] = f'Bearer {self.access_token}'
-                    response = requests.get(self.web_access_feed_url, headers=headers, params=params, timeout=15)
-                    response.raise_for_status()
+                    response = self._make_request_with_retry('GET', self.web_access_feed_url, headers=headers, params=params)
                     events_data = response.json()
                     
                     # Add user mapping if available and requested
@@ -241,21 +296,21 @@ class LookoutAPIClient:
         params = {'limit': limit}
         
         try:
-            response = requests.get(f"{self.mra_base_url}/mra/api/v2/devices", 
-                                  headers=headers, params=params, timeout=15)
-            response.raise_for_status()
+            response = self._make_request_with_retry('GET', f"{self.mra_base_url}/mra/api/v2/devices",
+                                                   headers=headers, params=params)
             return response.json()
         except RequestException as e:
             if hasattr(e, 'response') and e.response and e.response.status_code == 401:
-                print("🔄 Access token expired, attempting to refresh...")
+                if _DEBUG_LOGGING:
+                    print("🔄 Access token expired, attempting to refresh...")
                 if self.application_key:
                     self.access_token = self._exchange_application_key_for_token()
                     headers['Authorization'] = f'Bearer {self.access_token}'
-                    response = requests.get(f"{self.mra_base_url}/mra/api/v2/devices", 
-                                          headers=headers, params=params, timeout=15)
-                    response.raise_for_status()
+                    response = self._make_request_with_retry('GET', f"{self.mra_base_url}/mra/api/v2/devices",
+                                                           headers=headers, params=params)
                     return response.json()
-            print(f"MRA API request failed: {e.response.text if e.response else str(e)}")
+            if _DEBUG_LOGGING:
+                print(f"MRA API request failed: {e.response.text if e.response else str(e)}")
             return None
 
 def format_web_access_events(events, limit=None, include_user_mapping=True):
@@ -371,11 +426,19 @@ def main():
                        help='Disable automatic device-to-user mapping')
     parser.add_argument('--mapping-stats', action='store_true',
                        help='Show device mapping database statistics')
+    parser.add_argument('--timeout', type=int, default=120,
+                       help='Request timeout in seconds (default: 120)')
+    parser.add_argument('--max-retries', type=int, default=3,
+                       help='Maximum number of retry attempts (default: 3)')
     
     args = parser.parse_args()
     
     try:
-        client = LookoutAPIClient(enable_device_mapping=not args.no_user_mapping)
+        client = LookoutAPIClient(
+            enable_device_mapping=not args.no_user_mapping,
+            timeout=args.timeout,
+            max_retries=args.max_retries
+        )
         
         # Handle mapping stats display
         if args.mapping_stats:

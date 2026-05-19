@@ -6,13 +6,16 @@ import ipaddress
 import logging
 import csv
 import io
+import concurrent.futures
 from datetime import datetime, timezone, timedelta
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tabulate import tabulate
 
 # Load environment variables
 load_dotenv()
+_DEBUG_LOGGING = os.getenv('LOG_LEVEL', 'INFO').upper() == 'DEBUG'
 
 class LookoutAPIClient:
     def __init__(self):
@@ -59,7 +62,8 @@ class LookoutAPIClient:
         }
         
         try:
-            print("🔄 Refreshing access token...")
+            if _DEBUG_LOGGING:
+                print("🔄 Refreshing access token...")
             response = requests.post(self.oauth_url, headers=headers, data=data, timeout=30)
             response.raise_for_status()
             token_data = response.json()
@@ -74,7 +78,8 @@ class LookoutAPIClient:
                 os.environ['LOOKOUT_ACCESS_TOKEN'] = new_token
                 self.access_token = new_token
                 
-                print("✅ Access token refreshed successfully!")
+                if _DEBUG_LOGGING:
+                    print("✅ Access token refreshed successfully!")
                 return new_token
             else:
                 raise ValueError("No access_token in response")
@@ -98,11 +103,11 @@ class LookoutAPIClient:
         if debug:
             print(f"🔍 DEBUG: Making request to: {url}")
             print(f"🔍 DEBUG: Parameters: {params}")
-            print(f"🔍 DEBUG: Timeout set to: 720 seconds (12 minutes)")
+            print(f"🔍 DEBUG: Timeout set to: {os.getenv('TIMEOUT_SECONDS', '60')} seconds")
             start_time = datetime.now()
-        
+
         try:
-            response = requests.get(url, headers=headers, params=params, timeout=720)
+            response = requests.get(url, headers=headers, params=params, timeout=int(os.getenv('TIMEOUT_SECONDS', '60')))
             
             if debug:
                 elapsed_time = (datetime.now() - start_time).total_seconds()
@@ -112,7 +117,8 @@ class LookoutAPIClient:
             
             # If we get a 401 and haven't already retried, refresh token and try again
             if response.status_code == 401 and retry_on_auth_error:
-                print("🔄 Access token expired, refreshing...")
+                if _DEBUG_LOGGING:
+                    print("🔄 Access token expired, refreshing...")
                 self._refresh_access_token()
                 return self._make_authenticated_request(url, params, retry_on_auth_error=False, debug=debug)
             
@@ -134,7 +140,7 @@ class LookoutAPIClient:
             
         except requests.exceptions.Timeout as e:
             elapsed_time = (datetime.now() - start_time).total_seconds() if debug else "unknown"
-            error_msg = f"Request timed out after {elapsed_time} seconds. The API response is taking longer than the 720-second (12-minute) timeout."
+            error_msg = "Request timed out. Try a shorter time range or check your network connection."
             if debug:
                 print(f"🔍 DEBUG: Timeout occurred after {elapsed_time} seconds")
             raise SystemExit(f"❌ {error_msg}")
@@ -177,37 +183,85 @@ def get_ip_type_and_mode(ip_address):
     
     return "Unknown", "Unknown"
 
-def format_events(events, limit=None):
+def _extract_hostname(url: str) -> str:
+    try:
+        parsed = urlparse(url if '://' in url else 'https://' + url)
+        return (parsed.hostname or '').lower()
+    except Exception:
+        return ''
+
+def _doh_lookup(hostname: str, server: str) -> str:
+    try:
+        endpoint = 'https://1.1.1.1/dns-query' if server == 'cloudflare' else 'https://dns.google/resolve'
+        r = requests.get(endpoint, params={'name': hostname, 'type': 'A'},
+                         headers={'accept': 'application/dns-json'}, timeout=3)
+        data = r.json()
+        answers = [a['data'] for a in data.get('Answer', []) if a.get('type') == 1]
+        return answers[0] if answers else ''
+    except Exception:
+        return ''
+
+def _batch_resolve(raw_events):
+    all_hostnames = [_extract_hostname(e.get('request_url', '')) for e in raw_events]
+    uncached = list({h for h in all_hostnames if h})
+    if not uncached:
+        return {}
+    workers = min(len(uncached) * 2, 40)
+    resolved = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {}
+        for h in uncached:
+            futures[pool.submit(_doh_lookup, h, 'cloudflare')] = h
+            futures[pool.submit(_doh_lookup, h, 'google')] = h
+        for fut in concurrent.futures.as_completed(futures):
+            h = futures[fut]
+            if h in resolved:
+                continue
+            try:
+                ip = fut.result()
+                if ip:
+                    resolved[h] = ip
+            except Exception:
+                pass
+    return resolved
+
+def format_events(events, limit=None, resolved_ips=None):
     """Format events into a readable table"""
     if not events.get('lookup_access_events'):
         return "No events found in the specified time range"
     
+    resolved_ips = resolved_ips or {}
     table_data = []
     for event in events['lookup_access_events'][:limit]:
-        # Convert timestamp from milliseconds to readable format
         timestamp_ms = event['timestamp']
-        readable_time = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
-        
-        # Get IP address, DNS mode, and IP type
+        dt = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
+        utc_str = dt.strftime('%Y-%m-%d %H:%M:%S UTC')
+        local_str = dt.astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
+        timestamp_display = f"{utc_str}\n{local_str}"
+
         resolved_ip = event.get('resolved_ip_address', '')
         dns_mode, ip_type = get_ip_type_and_mode(resolved_ip)
-        
-        # Format IP display based on mode
+
         if dns_mode == "VPN Mode":
-            ip_display = "N/A"
+            hostname = _extract_hostname(event.get('request_url', ''))
+            doh_ip = resolved_ips.get(hostname, '') if hostname else ''
+            if doh_ip:
+                ip_display = f"{doh_ip} (DoH)"
+            else:
+                ip_display = "N/A"
         else:
             ip_display = f"{resolved_ip} ({ip_type})"
-        
+
         table_data.append([
-            readable_time,
+            timestamp_display,
             event['device_guid'][:8] + '...' + event['device_guid'][-3:],
             event['region'],
-            event['request_url'],  # Fixed: use request_url not request_uri
+            event['request_url'],
             dns_mode,
             ip_display,
-            event['id'][:8] + '...'  # Truncate long event IDs
+            event['id'][:8] + '...'
         ])
-    
+
     return tabulate(
         table_data,
         headers=['Timestamp', 'Device', 'Region', 'URL', 'DNS Mode', 'Resolved IP', 'Event ID'],
@@ -215,51 +269,54 @@ def format_events(events, limit=None):
         maxcolwidths=[None, 15, None, 35, 12, 25, None]
     )
 
-def format_events_csv(events, limit=None):
+def format_events_csv(events, limit=None, resolved_ips=None):
     """Format events into CSV format"""
     if not events.get('lookup_access_events'):
-        return "Timestamp,Device,Region,URL,DNS Mode,Resolved IP,IP Type,Event ID\n"
-    
+        return "UTC Timestamp,Local Timestamp,Device,Region,URL,DNS Mode,Resolved IP,IP Source,Event ID\n"
+
+    resolved_ips = resolved_ips or {}
     output = io.StringIO()
     writer = csv.writer(output)
-    
-    # Write header
-    writer.writerow(['Timestamp', 'Device', 'Region', 'URL', 'DNS Mode', 'Resolved IP', 'IP Type', 'Event ID'])
-    
-    # Write data rows
+
+    writer.writerow(['UTC Timestamp', 'Local Timestamp', 'Device', 'Region', 'URL', 'DNS Mode', 'Resolved IP', 'IP Source', 'Event ID'])
+
     for event in events['lookup_access_events'][:limit]:
-        # Convert timestamp from milliseconds to readable format
         timestamp_ms = event['timestamp']
-        readable_time = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
-        
-        # Get IP address, DNS mode, and IP type
+        dt = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
+        utc_str = dt.strftime('%Y-%m-%d %H:%M:%S UTC')
+        local_str = dt.astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
+
         resolved_ip = event.get('resolved_ip_address', '')
         dns_mode, ip_type = get_ip_type_and_mode(resolved_ip)
-        
-        # Format IP display for CSV (separate IP and type into different columns)
+
         if dns_mode == "VPN Mode":
-            ip_display = "N/A"
-            ip_type_display = "N/A"
+            hostname = _extract_hostname(event.get('request_url', ''))
+            doh_ip = resolved_ips.get(hostname, '') if hostname else ''
+            ip_display = doh_ip if doh_ip else 'N/A'
+            ip_source = 'DoH' if doh_ip else 'N/A'
         else:
             ip_display = resolved_ip
-            ip_type_display = ip_type
-        
+            ip_source = ip_type
+
         writer.writerow([
-            readable_time,
-            event['device_guid'],  # Full device GUID for CSV
+            utc_str,
+            local_str,
+            event['device_guid'],
             event['region'],
             event['request_url'],
             dns_mode,
             ip_display,
-            ip_type_display,
-            event['id']  # Full event ID for CSV
+            ip_source,
+            event['id']
         ])
-    
+
+
     return output.getvalue()
 
 def main():
     parser = argparse.ArgumentParser(description='Lookout Web Access Feed API Client')
     parser.add_argument('--start-time', help='Start time in format: YYYY-M-DDTHH:MM:SS+HH:MM (e.g., 2025-6-13T00:00:00+00:00)')
+    parser.add_argument('--last-30m', action='store_true', help='Show events from last 30 minutes')
     parser.add_argument('--last-1h', action='store_true', help='Show events from last 1 hour')
     parser.add_argument('--last-12h', action='store_true', help='Show events from last 12 hours')
     parser.add_argument('--last-24h', action='store_true', help='Show events from last 24 hours')
@@ -268,6 +325,7 @@ def main():
     parser.add_argument('--format', choices=['table', 'json', 'csv'], default='table', help='Output format')
     parser.add_argument('--force-refresh', action='store_true', help='Force refresh access token before making API calls')
     parser.add_argument('--debug', action='store_true', help='Enable debug output to troubleshoot API requests')
+    parser.add_argument('--device', help='Filter by device GUID (supports partial match)')
     
     args = parser.parse_args()
     
@@ -287,7 +345,10 @@ def main():
     start_time = None
     time_description = "Recent events"
     
-    if args.last_1h:
+    if args.last_30m:
+        start_time = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        time_description = "Last 30 minutes"
+    elif args.last_1h:
         start_time = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
         time_description = "Last 1 hour"
     elif args.last_12h:
@@ -305,13 +366,31 @@ def main():
     
     try:
         events = client.fetch_events(start_time=start_time, debug=args.debug)
-        
+
+        if args.device and 'lookup_access_events' in events:
+            original_count = len(events['lookup_access_events'])
+            events['lookup_access_events'] = [
+                e for e in events['lookup_access_events']
+                if args.device.lower() in e.get('device_guid', '').lower()
+            ]
+            device_filter_msg = f" (filtered from {original_count} total)"
+        else:
+            device_filter_msg = ""
+
+        if 'lookup_access_events' in events:
+            events['lookup_access_events'].sort(key=lambda x: x.get('timestamp', 0), reverse=True)
+
+        raw = events.get('lookup_access_events', [])
+        resolved_ips = _batch_resolve(raw[:args.limit]) if raw else {}
+
         print(f"=== Lookout Web Access Activity Feed ===")
-        print(f"Time range: {time_description}\n")
-        
+        print(f"Time range: {time_description}")
+        if args.device:
+            print(f"Device filter: {args.device}")
+        print()
+
         if args.format == 'json':
             import json
-            # Enhance JSON output with DNS mode and IP type flags
             enhanced_events = events.copy()
             if 'lookup_access_events' in enhanced_events:
                 for event in enhanced_events['lookup_access_events']:
@@ -319,14 +398,17 @@ def main():
                     dns_mode, ip_type = get_ip_type_and_mode(ip_address)
                     event['dns_mode'] = dns_mode
                     event['ip_type'] = ip_type
+                    if dns_mode == "VPN Mode":
+                        hostname = _extract_hostname(event.get('request_url', ''))
+                        event['doh_resolved_ip'] = resolved_ips.get(hostname, '') if hostname else ''
             print(json.dumps(enhanced_events, indent=2))
         elif args.format == 'csv':
-            print(format_events_csv(events, limit=args.limit))
+            print(format_events_csv(events, limit=args.limit, resolved_ips=resolved_ips))
         else:
-            print(format_events(events, limit=args.limit))
+            print(format_events(events, limit=args.limit, resolved_ips=resolved_ips))
             
         event_count = len(events.get('lookup_access_events', []))
-        print(f"\nTotal events found: {event_count}")
+        print(f"\nTotal events found: {event_count}{device_filter_msg}")
         
     except Exception as e:
         print(f"Error: {e}")

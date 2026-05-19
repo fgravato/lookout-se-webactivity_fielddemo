@@ -1,0 +1,2626 @@
+{
+    "paths": {
+        "/api/partners/v1/orders": {
+            "post": {
+                "operationId": "create",
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Process a create order for a tenant or organization.",
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/CreateOrder"
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/Order"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    }
+                }
+            }
+        },
+        "/api/partners/v1/orders/modify": {
+            "post": {
+                "operationId": "modify",
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Process a modify order for a tenant.",
+                "description": "The modify endpoint allows subscription changes that do not change the term. For term related changes, for example changing the term length, type, or auto-renewal status, please use the renew order endpoint.",
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/ModifyOrder"
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Order"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    }
+                }
+            }
+        },
+        "/api/partners/v1/orders/renew": {
+            "post": {
+                "operationId": "renew",
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Process a renew order for a tenant.",
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/RenewOrder"
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Order"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    }
+                }
+            }
+        },
+        "/api/partners/v1/orders/cancel": {
+            "post": {
+                "operationId": "cancel",
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Process a cancel order for a tenant.",
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/CancelOrder"
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Order"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    }
+                }
+            }
+        },
+        "/api/partners/v1/orders/{transactionId}": {
+            "get": {
+                "operationId": "getByTransactionId",
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Find a tenant order by transaction ID.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/OrderFull"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "transactionId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants": {
+            "get": {
+                "operationId": "getTenants",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the tenants for the commercial partner.",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/offset"
+                    },
+                    {
+                        "$ref": "#/components/parameters/limit"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/PaginatedTenantsList"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/api/partners/v1/tenants/global_data": {
+            "get": {
+                "operationId": "getGlobalData",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Global data summary",
+                "description": "A global summary across all tenants. Updated twice a day.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/GlobalData"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/data_bundle": {
+            "get": {
+                "operationId": "getTenantDataBundle",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the data bundle of a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/TenantDataBundle"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "filter",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": null
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/licenses_purchased": {
+            "get": {
+                "operationId": "getLicensesPurchased",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the total number of licenses purchased by a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/LicensesPurchased"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/licenses_used": {
+            "get": {
+                "operationId": "getLicensesUsed",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the total number of licenses used by a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/LicensesUsed"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/admin_logins": {
+            "get": {
+                "operationId": "getAdminLogins",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the total number of admin logins for a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/AdminLogins"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/last_admin_login": {
+            "get": {
+                "operationId": "getLastAdminLogin",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the last admin login date-time for a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/LastAdminLogin"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/open_issues": {
+            "get": {
+                "operationId": "getOpenIssues",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the total number of open issues for a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/OpenIssues"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/resolved_issues": {
+            "get": {
+                "operationId": "getResolvedIssues",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the total number of resolved issues for a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ResolvedIssues"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/applications_scanned": {
+            "get": {
+                "operationId": "getApplicationsScanned",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the total number of applications scanned for a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ApplicationsScanned"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/malicious_sites_blocked": {
+            "get": {
+                "operationId": "getMaliciousSitesBlocked",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the total number of malicious sites blocked for a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/MaliciousSitesBlocked"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/phishing_sites_blocked": {
+            "get": {
+                "operationId": "getPhishingSitesBlocked",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the total number of phishing sites blocked for a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/PhishingSitesBlocked"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/protections": {
+            "get": {
+                "operationId": "getProtections",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the types of Lookout protections enabled for a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Protections"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/global_enrollment_code_url": {
+            "get": {
+                "operationId": "getGlobalEnrollmentCodeUrl",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the global enrollement code URL for a tenant.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/GlobalEnrollmentCodeUrl"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/subscription": {
+            "get": {
+                "operationId": "getCurrentSubscription",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return the current subscription overview for a tenant. Only tenant subscriptions created through the Lookout Partner API are visible.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/CurrentSubscription"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/tenants/{externalPartnerId}/orders": {
+            "get": {
+                "operationId": "getOrders",
+                "tags": [
+                    "Tenants"
+                ],
+                "summary": "Return a paginated list of orders for a tenant. Only orders submitted through the Lookout Partner API are visible.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/offset"
+                    },
+                    {
+                        "$ref": "#/components/parameters/limit"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/PaginatedOrderList"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/api/partners/v1/orgs": {
+            "get": {
+                "operationId": "getOrgs",
+                "tags": [
+                    "Organizations"
+                ],
+                "summary": "Returns a paginated list of organizations that belong to a commercial partner.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/PaginatedOrgsList"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/api/partners/v1/orgs/default": {
+            "get": {
+                "operationId": "getDefaultOrg",
+                "tags": [
+                    "Organizations"
+                ],
+                "summary": "Returns the default organization for a commercial partner.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Org"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/api/partners/v1/orgs/{externalOrgId}": {
+            "get": {
+                "operationId": "getOrgByPartnerId",
+                "tags": [
+                    "Organizations"
+                ],
+                "summary": "Return details about an organization.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Org"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalOrgId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/orgs/{externalOrgId}/tenants": {
+            "get": {
+                "operationId": "getTenants",
+                "tags": [
+                    "Organizations"
+                ],
+                "summary": "Return details about an organization's tenants.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/PaginatedTenantsList"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalOrgId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/mgmt/tenants/{externalPartnerId}/application_keys": {
+            "get": {
+                "operationId": "getAllApplicationKeysForEnt",
+                "tags": [
+                    "Management"
+                ],
+                "summary": "Return details about all keys for provided external identifier.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ApplicationKeys"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "createApplicationKeyForEnt",
+                "tags": [
+                    "Management"
+                ],
+                "summary": "Create an application key for the Management API application on provided external identifier",
+                "description": "Key name parameter is optional. If it is not supplied through the request body, a default name of ManagementApi-<timestamp> will be assigned",
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/CreateApplicationKey"
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ApplicationKey"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/mgmt/tenants/{externalPartnerId}/application_keys/{keyGuid}": {
+            "get": {
+                "operationId": "getApplicationKeyForEnt",
+                "tags": [
+                    "Management"
+                ],
+                "summary": "Return details about matching key guid for provided external identifier.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ApplicationKey"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "keyGuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "deleteApplicationKeyForEnt",
+                "tags": [
+                    "Management"
+                ],
+                "summary": "Delete provided key guid",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ApplicationKey"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalPartnerId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "keyGuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/mgmt/orgs/{externalOrgId}/application_keys": {
+            "get": {
+                "operationId": "getAllApplicationKeysForOrg",
+                "tags": [
+                    "Management"
+                ],
+                "summary": "Return details about all keys for provided external identifier.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ApplicationKeys"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalOrgId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "createApplicationKeyForOrg",
+                "tags": [
+                    "Management"
+                ],
+                "summary": "Create an application key for the Management API application on provided external identifier",
+                "description": "Key name parameter is optional. If it is not supplied through the request body, a default name of ManagementApi-<timestamp> will be assigned",
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/CreateApplicationKey"
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ApplicationKey"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalOrgId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/mgmt/orgs/{externalOrgId}/application_keys/{keyGuid}": {
+            "get": {
+                "operationId": "getApplicationKeyForOrg",
+                "tags": [
+                    "Management"
+                ],
+                "summary": "Return details about matching key guid for provided external identifier.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ApplicationKey"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalOrgId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "keyGuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "deleteApplicationKeyForOrg",
+                "tags": [
+                    "Management"
+                ],
+                "summary": "Delete provided key guid",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ApplicationKey"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalOrgId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "keyGuid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/partners/v1/orgs/{externalOrgId}/default": {
+            "put": {
+                "operationId": "updateDefaultOrg",
+                "tags": [
+                    "Organizations"
+                ],
+                "summary": "Change the default organization for a commercial partner.",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Org"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "externalOrgId",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Error": {
+                "type": "object",
+                "required": [
+                    "message",
+                    "traceId"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    },
+                    "traceId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "6c84be13-5d9b-4ab0-a9c0-12d86f86695a"
+                    }
+                }
+            },
+            "NotFoundError": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                        "type": "object",
+                        "required": [
+                            "code"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "integer",
+                                "example": 404
+                            }
+                        }
+                    }
+                ]
+            },
+            "BadRequestError": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                        "type": "object",
+                        "required": [
+                            "code"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "integer",
+                                "example": 400
+                            }
+                        }
+                    }
+                ]
+            },
+            "UnauthorizedError": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                        "type": "object",
+                        "required": [
+                            "code"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "integer",
+                                "example": 403
+                            }
+                        }
+                    }
+                ]
+            },
+            "Admin": {
+                "type": "object",
+                "required": [
+                    "contactEmail",
+                    "contactFirstName",
+                    "contactLastName"
+                ],
+                "properties": {
+                    "contactEmail": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "linda@bobsburgers.com"
+                    },
+                    "contactFirstName": {
+                        "type": "string",
+                        "example": "Linda"
+                    },
+                    "contactLastName": {
+                        "type": "string",
+                        "example": "Belcher"
+                    }
+                }
+            },
+            "AdminModify": {
+                "type": "object",
+                "properties": {
+                    "contactEmail": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "linda@bobsburgers.com"
+                    },
+                    "contactFirstName": {
+                        "type": "string",
+                        "example": "Linda"
+                    },
+                    "contactLastName": {
+                        "type": "string",
+                        "example": "Belcher"
+                    }
+                }
+            },
+            "LicensesPurchased": {
+                "type": "object",
+                "properties": {
+                    "licensesPurchased": {
+                        "type": "integer",
+                        "example": 1000
+                    }
+                }
+            },
+            "LicensesUsed": {
+                "type": "object",
+                "properties": {
+                    "licensesUsed": {
+                        "type": "integer",
+                        "example": 1000
+                    },
+                    "devices": {
+                        "type": "object",
+                        "properties": {
+                            "disconnected": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "pending": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "protected": {
+                                "type": "integer",
+                                "example": 7
+                            }
+                        }
+                    }
+                }
+            },
+            "AdminLogins": {
+                "type": "object",
+                "properties": {
+                    "adminLogins": {
+                        "type": "integer",
+                        "example": 10
+                    }
+                }
+            },
+            "LastAdminLogin": {
+                "type": "object",
+                "properties": {
+                    "lastAdminLogin": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2021-12-31T23:59:60Z"
+                    }
+                }
+            },
+            "OpenIssues": {
+                "type": "object",
+                "properties": {
+                    "openIssues": {
+                        "type": "object",
+                        "properties": {
+                            "high": {
+                                "type": "integer",
+                                "example": 0
+                            },
+                            "medium": {
+                                "type": "integer",
+                                "example": 3
+                            },
+                            "low": {
+                                "type": "integer",
+                                "example": 10
+                            }
+                        }
+                    }
+                }
+            },
+            "ResolvedIssues": {
+                "type": "object",
+                "properties": {
+                    "resolvedIssues": {
+                        "type": "object",
+                        "properties": {
+                            "high": {
+                                "type": "integer",
+                                "example": 0
+                            },
+                            "medium": {
+                                "type": "integer",
+                                "example": 3
+                            },
+                            "low": {
+                                "type": "integer",
+                                "example": 10
+                            }
+                        }
+                    }
+                }
+            },
+            "ApplicationsScanned": {
+                "type": "object",
+                "properties": {
+                    "applicationsScanned": {
+                        "type": "integer",
+                        "example": 200
+                    }
+                }
+            },
+            "MaliciousSitesBlocked": {
+                "type": "object",
+                "properties": {
+                    "maliciousSitesBlocked": {
+                        "type": "integer",
+                        "example": 20
+                    }
+                }
+            },
+            "PhishingSitesBlocked": {
+                "type": "object",
+                "properties": {
+                    "phishingSitesBlocked": {
+                        "type": "integer",
+                        "example": 2
+                    }
+                }
+            },
+            "Protections": {
+                "type": "object",
+                "properties": {
+                    "protections": {
+                        "type": "array",
+                        "description": "One or more abbreviated Lookout protection features",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "EDR",
+                            "MVM",
+                            "MRC"
+                        ]
+                    }
+                }
+            },
+            "GlobalEnrollmentCodeUrl": {
+                "type": "object",
+                "properties": {
+                    "globalEnrollmentCodeUrl": {
+                        "type": "string",
+                        "example": "https://app.lookout.com/code/CTKBJYA"
+                    }
+                }
+            },
+            "Subscription": {
+                "type": "object",
+                "properties": {
+                    "skus": {
+                        "$ref": "#/components/schemas/Skus"
+                    },
+                    "termType": {
+                        "$ref": "#/components/schemas/TermType"
+                    },
+                    "termLength": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "seatTotal": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "autoRenewState": {
+                        "$ref": "#/components/schemas/AutoRenewState"
+                    },
+                    "implementationDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2021-12-30T23:59:60Z"
+                    },
+                    "renewalDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2022-12-30T23:59:60Z"
+                    }
+                }
+            },
+            "DataRetentionMonths": {
+                "type": "object",
+                "properties": {
+                    "dataRetentionMonths": {
+                        "type": "integer",
+                        "example": 13
+                    }
+                }
+            },
+            "Org": {
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "length cannot exceed 128 characters",
+                        "example": "Bob's organization"
+                    },
+                    "defaultOrganization": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "region": {
+                        "$ref": "#/components/schemas/MesRegion"
+                    }
+                }
+            },
+            "OrgDetails": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Bob's organization"
+                    },
+                    "externalOrgId": {
+                        "type": "string",
+                        "example": "77252b43-3304-44f7-8454-a0d2fed299f8"
+                    },
+                    "seats": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "defaultOrganization": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/EntityState"
+                    }
+                }
+            },
+            "TenantDetails": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Tenant Name"
+                    },
+                    "externalPartnerId": {
+                        "type": "string",
+                        "description": "Length cannot exceed 64 characters",
+                        "example": "97252b43-3304-44f7-8454-a0d2fed299f8"
+                    },
+                    "skus": {
+                        "$ref": "#/components/schemas/Skus"
+                    },
+                    "licenseUsage": {
+                        "type": "string",
+                        "example": "100/19"
+                    },
+                    "billingDate": {
+                        "type": "string",
+                        "example": "2022-12-30T23:59:60Z"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/EntityState"
+                    },
+                    "guid": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "9c84be13-5d9b-4ab0-a9c0-12d86f86695a"
+                    },
+                    "dataRetentionMonths": {
+                        "type": "integer",
+                        "example": 13
+                    }
+                }
+            },
+            "MesRegion": {
+                "type": "string",
+                "enum": [
+                    "lkt-us-west-2",
+                    "lkt-hsm",
+                    "lkt-fedramp",
+                    "lkt-eu-central-1",
+                    "lkt-ap-south-1",
+                    "lkt-ap-southeast-1",
+                    "lkt-ca-central-1",
+                    "lkt-eu-west-2",
+                    "lkt-ap-southeast-2"
+                ],
+                "example": "lkt-us-west-2"
+            },
+            "SseRegion": {
+                "type": "string",
+                "enum": [
+                    "lkt-us-east-1,",
+                    "lkt-us-west-2",
+                    "lkt-eu-west-1",
+                    "lkt-eu-central-1",
+                    "lkt-ap-southeast-1",
+                    "lkt-me-central-1"
+                ],
+                "example": "lkt-us-west-2"
+            },
+            "Tenant": {
+                "type": "object",
+                "required": [
+                    "companyName"
+                ],
+                "properties": {
+                    "companyName": {
+                        "type": "string",
+                        "description": "length cannot exceed 128 characters",
+                        "example": "Bob's burgers"
+                    },
+                    "companyDetails": {
+                        "type": "string",
+                        "example": "Flipping burgers at the shore."
+                    },
+                    "streetAddress1": {
+                        "type": "string",
+                        "example": "Seymour's Bay"
+                    },
+                    "streetAddress2": {
+                        "type": "string",
+                        "example": "Ocean Avenue"
+                    },
+                    "city": {
+                        "type": "string",
+                        "example": "Hoboken"
+                    },
+                    "state": {
+                        "type": "string",
+                        "example": "NJ"
+                    },
+                    "zip": {
+                        "type": "integer",
+                        "example": 3608
+                    },
+                    "country": {
+                        "type": "string",
+                        "example": "US"
+                    },
+                    "companyDomain": {
+                        "type": "string",
+                        "example": "bobsburgers.com"
+                    },
+                    "emailDomain": {
+                        "type": "string",
+                        "example": "bobsburgers.com"
+                    },
+                    "companyWebsite": {
+                        "type": "string",
+                        "example": "www.bobsburgers.com"
+                    },
+                    "companyPhone": {
+                        "type": "string",
+                        "example": 1345132919
+                    },
+                    "region": {
+                        "$ref": "#/components/schemas/MesRegion"
+                    }
+                }
+            },
+            "SseTenant": {
+                "type": "object",
+                "required": [
+                    "companyName",
+                    "region"
+                ],
+                "properties": {
+                    "companyName": {
+                        "type": "string",
+                        "example": "Bob's burgers"
+                    },
+                    "companyDetails": {
+                        "type": "string",
+                        "example": "Flipping burgers at the shore."
+                    },
+                    "streetAddress1": {
+                        "type": "string",
+                        "example": "Seymour's Bay"
+                    },
+                    "streetAddress2": {
+                        "type": "string",
+                        "example": "Ocean Avenue"
+                    },
+                    "city": {
+                        "type": "string",
+                        "example": "Hoboken"
+                    },
+                    "state": {
+                        "type": "string",
+                        "example": "NJ"
+                    },
+                    "zip": {
+                        "type": "integer",
+                        "example": 3608
+                    },
+                    "country": {
+                        "type": "string",
+                        "example": "US"
+                    },
+                    "companyDomain": {
+                        "type": "string",
+                        "example": "bobsburgers.com"
+                    },
+                    "emailDomain": {
+                        "type": "string",
+                        "example": "bobsburgers.com"
+                    },
+                    "companyWebsite": {
+                        "type": "string",
+                        "example": "www.bobsburgers.com"
+                    },
+                    "companyPhone": {
+                        "type": "string",
+                        "example": 1345132919
+                    },
+                    "region": {
+                        "$ref": "#/components/schemas/SseRegion"
+                    }
+                }
+            },
+            "ApplicationKey": {
+                "type": "object",
+                "properties": {
+                    "guid": {
+                        "type": "string",
+                        "example": "12345678-1234-1234-1234-123456789101"
+                    },
+                    "appl_guid": {
+                        "type": "string",
+                        "example": "12345678-1234-1234-1234-123456789101"
+                    },
+                    "key_name": {
+                        "type": "string",
+                        "example": "ManagementAPI-1234556"
+                    },
+                    "creator_guid": {
+                        "type": "string",
+                        "example": "12345678-1234-1234-1234-123456789101"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "example": 1685656759000
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "example": 1685656759000
+                    },
+                    "fingerprint": {
+                        "type": "string",
+                        "example": "381fc9020d14253f510d6e710d20c48bfdb29eabf54508ad9163492865e875eb"
+                    },
+                    "fingerprint_algo": {
+                        "type": "string",
+                        "example": "sha256"
+                    },
+                    "expires_at": {
+                        "type": "integer",
+                        "example": 1748728759207
+                    },
+                    "created_by": {
+                        "type": "string",
+                        "example": "Partner API"
+                    },
+                    "key": {
+                        "type": "string",
+                        "example": "eyJraWQiOiI2YTo1ZDphNTphNDo0..."
+                    }
+                }
+            },
+            "CreateApplicationKey": {
+                "type": "object",
+                "properties": {
+                    "key_name": {
+                        "type": "string",
+                        "example": "AppKey-123456"
+                    }
+                }
+            },
+            "ManagedOrder": {
+                "type": "object",
+                "required": [
+                    "managed",
+                    "externalOrgId"
+                ],
+                "properties": {
+                    "managed": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "externalOrgId": {
+                        "type": "string",
+                        "description": "Cannot exceed 64 characters",
+                        "example": "allow-alphanumeric-dashes_underscores"
+                    }
+                }
+            },
+            "AutoRenewState": {
+                "type": "string",
+                "enum": [
+                    "OPEN",
+                    "ON",
+                    "OFF"
+                ]
+            },
+            "Skus": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "example": [
+                    "MESP-C-U1Y-PD-TST"
+                ]
+            },
+            "TermType": {
+                "type": "string",
+                "enum": [
+                    "ANNUAL",
+                    "MONTHLY"
+                ]
+            },
+            "ProductType": {
+                "type": "string",
+                "enum": [
+                    "MES",
+                    "SSE"
+                ]
+            },
+            "Language": {
+                "type": "string",
+                "enum": [
+                    "en",
+                    "ja",
+                    "de",
+                    "it",
+                    "es",
+                    "fr",
+                    "hu",
+                    "nl",
+                    "pt",
+                    "pt-BR",
+                    "tr",
+                    "ro",
+                    "cs",
+                    "el",
+                    "sq"
+                ]
+            },
+            "EntityState": {
+                "type": "string",
+                "enum": [
+                    "ACTIVE",
+                    "SUSPENDED"
+                ]
+            },
+            "OrderType": {
+                "type": "string",
+                "enum": [
+                    "CREATE",
+                    "MODIFY",
+                    "RENEW",
+                    "CANCEL"
+                ],
+                "example": "CREATE"
+            },
+            "OrderState": {
+                "type": "string",
+                "enum": [
+                    "SUCCESS",
+                    "PROCESSING",
+                    "FAILURE"
+                ]
+            },
+            "OrderHeader": {
+                "type": "object",
+                "required": [
+                    "transactionId",
+                    "externalPartnerId"
+                ],
+                "properties": {
+                    "transactionId": {
+                        "type": "string",
+                        "example": "allow-alphanumeric-dashes_underscores"
+                    },
+                    "externalPartnerId": {
+                        "type": "string",
+                        "description": "Cannot exceed 64 characters",
+                        "example": "allow-alphanumeric-dashes_underscores"
+                    }
+                }
+            },
+            "OrderBodyRequest": {
+                "type": "object",
+                "required": [
+                    "skus",
+                    "seatTotal"
+                ],
+                "properties": {
+                    "skus": {
+                        "$ref": "#/components/schemas/Skus"
+                    },
+                    "termType": {
+                        "$ref": "#/components/schemas/TermType"
+                    },
+                    "language": {
+                        "$ref": "#/components/schemas/Language"
+                    },
+                    "termLength": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "seatTotal": {
+                        "type": "integer",
+                        "example": 100
+                    },
+                    "autoRenewState": {
+                        "$ref": "#/components/schemas/AutoRenewState"
+                    },
+                    "overrideCode": {
+                        "type": "string",
+                        "example": "SEIDNET"
+                    },
+                    "commercialPartnerName": {
+                        "type": "string",
+                        "description": "Only for syndicated orders - when the commercial partner for the tenant is different to that in the token authorizing the request. Otherwise this field should be omitted."
+                    },
+                    "sendEmail": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "When present and set to 'false', a welcome email is not sent to the administrator of the new tenant. Otherwise an email is sent."
+                    }
+                }
+            },
+            "OrgOrderBodyRequest": {
+                "type": "object",
+                "required": [
+                    "seatTotal"
+                ],
+                "properties": {
+                    "seatTotal": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "defaultOrganization": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "commercialPartnerName": {
+                        "type": "string",
+                        "description": "Only for syndicated orders - when the commercial partner for the tenant is different to that in the token authorizing the request. Otherwise this field should be omitted."
+                    }
+                }
+            },
+            "OrderBodyRequestModify": {
+                "type": "object",
+                "required": [
+                    "skus"
+                ],
+                "properties": {
+                    "skus": {
+                        "$ref": "#/components/schemas/Skus"
+                    },
+                    "seatTotal": {
+                        "type": "integer",
+                        "example": 100
+                    },
+                    "managed": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "externalOrgId": {
+                        "type": "string",
+                        "example": "allow-alphanumeric-dashes_underscores"
+                    },
+                    "termType": {
+                        "$ref": "#/components/schemas/TermType"
+                    },
+                    "termLength": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "autoRenewState": {
+                        "$ref": "#/components/schemas/AutoRenewState"
+                    },
+                    "overrideCode": {
+                        "type": "string",
+                        "example": "SEIDNET"
+                    },
+                    "productType": {
+                        "$ref": "#/components/schemas/ProductType"
+                    },
+                    "commercialPartnerName": {
+                        "type": "string"
+                    }
+                }
+            },
+            "OrderBodyRequestRenew": {
+                "type": "object",
+                "required": [
+                    "skus"
+                ],
+                "properties": {
+                    "skus": {
+                        "$ref": "#/components/schemas/Skus"
+                    },
+                    "seatTotal": {
+                        "type": "integer",
+                        "example": 100
+                    },
+                    "termType": {
+                        "$ref": "#/components/schemas/TermType"
+                    },
+                    "termLength": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "autoRenewState": {
+                        "$ref": "#/components/schemas/AutoRenewState"
+                    },
+                    "overrideCode": {
+                        "type": "string",
+                        "example": "SEIDNET"
+                    },
+                    "productType": {
+                        "$ref": "#/components/schemas/ProductType"
+                    },
+                    "commercialPartnerName": {
+                        "type": "string"
+                    }
+                }
+            },
+            "OrderBodyRequestCancel": {
+                "type": "object",
+                "required": [
+                    "skus"
+                ],
+                "properties": {
+                    "skus": {
+                        "$ref": "#/components/schemas/Skus"
+                    },
+                    "productType": {
+                        "$ref": "#/components/schemas/ProductType"
+                    },
+                    "commercialPartnerName": {
+                        "type": "string"
+                    }
+                }
+            },
+            "OrderBodyResponse": {
+                "properties": {
+                    "skus": {
+                        "$ref": "#/components/schemas/Skus"
+                    },
+                    "termType": {
+                        "$ref": "#/components/schemas/TermType"
+                    },
+                    "termLength": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "orderType": {
+                        "$ref": "#/components/schemas/OrderType"
+                    },
+                    "seatTotal": {
+                        "type": "integer",
+                        "example": 100
+                    },
+                    "autoRenewState": {
+                        "$ref": "#/components/schemas/AutoRenewState"
+                    },
+                    "overrideCode": {
+                        "type": "string",
+                        "example": "SEIDNET"
+                    }
+                }
+            },
+            "OrderStatus": {
+                "properties": {
+                    "orderDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2021-12-30T23:59:60Z"
+                    },
+                    "implementationDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2021-12-31T23:59:60Z"
+                    },
+                    "orderType": {
+                        "$ref": "#/components/schemas/OrderType"
+                    },
+                    "orderState": {
+                        "$ref": "#/components/schemas/OrderState"
+                    },
+                    "errorMessage": {
+                        "type": "string",
+                        "example": "Error message for orders that failed to get processed"
+                    },
+                    "lookoutEntityGuid": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "9c84be13-5d9b-4ab0-a9c0-12d86f86695a"
+                    }
+                }
+            },
+            "Order": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/OrderHeader"
+                    },
+                    {
+                        "$ref": "#/components/schemas/OrderStatus"
+                    }
+                ]
+            },
+            "MesTenantCreateOrder": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/OrderHeader"
+                    },
+                    {
+                        "$ref": "#/components/schemas/OrderBodyRequest"
+                    },
+                    {
+                        "$ref": "#/components/schemas/Admin"
+                    },
+                    {
+                        "$ref": "#/components/schemas/Tenant"
+                    }
+                ]
+            },
+            "MesManagedTenantCreateOrder": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/OrderHeader"
+                    },
+                    {
+                        "$ref": "#/components/schemas/OrderBodyRequest"
+                    },
+                    {
+                        "$ref": "#/components/schemas/Admin"
+                    },
+                    {
+                        "$ref": "#/components/schemas/Tenant"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ManagedOrder"
+                    }
+                ]
+            },
+            "MesOrgCreateOrder": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/OrderHeader"
+                    },
+                    {
+                        "$ref": "#/components/schemas/OrgOrderBodyRequest"
+                    },
+                    {
+                        "$ref": "#/components/schemas/Admin"
+                    },
+                    {
+                        "$ref": "#/components/schemas/Org"
+                    }
+                ]
+            },
+            "SseTenantCreateOrder": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/OrderHeader"
+                    },
+                    {
+                        "$ref": "#/components/schemas/OrderBodyRequest"
+                    },
+                    {
+                        "$ref": "#/components/schemas/Admin"
+                    },
+                    {
+                        "$ref": "#/components/schemas/SseTenant"
+                    }
+                ]
+            },
+            "PerCountryStat": {
+                "type": "object",
+                "properties": {
+                    "countryId": {
+                        "type": "string",
+                        "description": "Country identifier",
+                        "example": "US"
+                    },
+                    "maliciousSitesDetected": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "phishingSitesDetected": {
+                        "type": "integer",
+                        "example": 3
+                    }
+                }
+            }
+        },
+        "parameters": {
+            "offset": {
+                "in": "query",
+                "name": "offset",
+                "required": false,
+                "schema": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0
+                },
+                "description": "The number of items to skip before starting to collect the result set."
+            },
+            "limit": {
+                "in": "query",
+                "name": "limit",
+                "required": false,
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 20
+                },
+                "description": "The numbers of items to return."
+            }
+        },
+        "requestBodies": {
+            "CreateOrder": {
+                "description": "A JSON object containing order creation information for a tenant or an organization. The `transactionId` and `externalPartnerId` format must be alphanumeric and can include dashes and underscores. `externalPartnerId` lengths cannot exceed 64 characters. Organization `name` length cannot exceed 128 characters. Append the '-TST' SKU suffix when sending test orders for MES. Append the '-TRL' SKU suffix when sending trial orders for MES. If your create request contains a SKU that has a 'U1M' or is a 'UC' SKU for 1 Month `autoRenewState` must be set = 'ON'.",
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "oneOf": [
+                                {
+                                    "$ref": "#/components/schemas/MesTenantCreateOrder"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/MesManagedTenantCreateOrder"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/MesOrgCreateOrder"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/SseTenantCreateOrder"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "ModifyOrder": {
+                "description": "A JSON object containing one or more order modifications for an existing tenant. The `external_partner_id` must match an existing tenant. The `transaction_id` and `external_partner_id` format must be alphanumeric and can include dashes and underscores. Append the '-TST' SKU suffix when sending test orders for MES. Append the '-TRL' SKU suffix when sending trial orders for MES. If your modify request contains a SKU that has a 'U1M' or is a 'UC' SKU for 1 Month `autoRenewState` must be set = 'ON'.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/OrderHeader"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/OrderBodyRequestModify"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/AdminModify"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "RenewOrder": {
+                "description": "The `external_partner_id` must match an existing tenant. The `transaction_id` and `external_partner_id` format must be alphanumeric and can include dashes and underscores. Append the '-TST' SKU suffix when sending test orders for MES. Append the '-TRL' SKU suffix when sending trial orders for MES. If your renew request contains a SKU that has a 'U1M' or is a 'UC' SKU for 1 Month `autoRenewState` must be set = 'ON'.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/OrderHeader"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/OrderBodyRequestRenew"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "CancelOrder": {
+                "description": "The `external_partner_id` must match an existing tenant. The `transaction_id` and `external_partner_id` format must be alphanumeric and can include dashes and underscores.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/OrderHeader"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/OrderBodyRequestCancel"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "CreateApplicationKey": {
+                "description": "Create an application key.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/CreateApplicationKey"
+                        }
+                    }
+                }
+            }
+        },
+        "responses": {
+            "NotFound": {
+                "description": "Not Found.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/NotFoundError"
+                        }
+                    }
+                }
+            },
+            "BadRequest": {
+                "description": "Bad Request.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BadRequestError"
+                        }
+                    }
+                }
+            },
+            "Unauthorized": {
+                "description": "Forbidden.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/UnauthorizedError"
+                        }
+                    }
+                }
+            },
+            "Order": {
+                "description": "Order response.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/OrderHeader"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/OrderStatus"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "OrderFull": {
+                "description": "Order response with details.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Order"
+                        }
+                    }
+                }
+            },
+            "PaginatedOrderList": {
+                "description": "Paginated list of orders.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "orders": {
+                                    "type": "array",
+                                    "description": "List of orders",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Order"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "CurrentSubscription": {
+                "description": "Current subscription overview.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Subscription"
+                        }
+                    }
+                }
+            },
+            "PaginatedTenantsList": {
+                "description": "Paginated list of tenants for the commercial partner.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "tenants": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TenantDetails"
+                                    }
+                                },
+                                "count": {
+                                    "type": "integer",
+                                    "example": 3998
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "LicensesPurchased": {
+                "description": "Number of licenses purchased.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/LicensesPurchased"
+                        }
+                    }
+                }
+            },
+            "LicensesUsed": {
+                "description": "Number of licenses used.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/LicensesUsed"
+                        }
+                    }
+                }
+            },
+            "AdminLogins": {
+                "description": "Number of admin logins.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/AdminLogins"
+                        }
+                    }
+                }
+            },
+            "LastAdminLogin": {
+                "description": "Last admin login date-time.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/LastAdminLogin"
+                        }
+                    }
+                }
+            },
+            "OpenIssues": {
+                "description": "Number of open issues.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/OpenIssues"
+                        }
+                    }
+                }
+            },
+            "ResolvedIssues": {
+                "description": "Number of resolved issues.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ResolvedIssues"
+                        }
+                    }
+                }
+            },
+            "ApplicationsScanned": {
+                "description": "Number of applications scanned.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ApplicationsScanned"
+                        }
+                    }
+                }
+            },
+            "MaliciousSitesBlocked": {
+                "description": "Number of malicious sites blocked.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/MaliciousSitesBlocked"
+                        }
+                    }
+                }
+            },
+            "PhishingSitesBlocked": {
+                "description": "Number of phishing sites blocked.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/PhishingSitesBlocked"
+                        }
+                    }
+                }
+            },
+            "Protections": {
+                "description": "Types of enabled Lookout protection features.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Protections"
+                        }
+                    }
+                }
+            },
+            "GlobalEnrollmentCodeUrl": {
+                "description": "Global enrollment code URL.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/GlobalEnrollmentCodeUrl"
+                        }
+                    }
+                }
+            },
+            "GlobalData": {
+                "description": "Return the total number of:\n  - Apps analyzed\n  - Malicious sites detected\n  - Phishing sites detected\n\nAdditionally, based on countries registered to the Partner, return the breakdown of:\n  - Malicious sites detected per country\n  - Phishing sites detected per country",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "appsAnalyzed": {
+                                    "type": "integer",
+                                    "example": 10000
+                                },
+                                "maliciousSitesDetected": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "phishingSitesDetected": {
+                                    "type": "integer",
+                                    "example": 3
+                                },
+                                "countries": {
+                                    "type": "array",
+                                    "description": "One or more per country statistic.",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PerCountryStat"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "ApplicationKeys": {
+                "description": "List of Application Keys for a specific external identifier",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/ApplicationKey"
+                            }
+                        }
+                    }
+                }
+            },
+            "ApplicationKey": {
+                "description": "Information of singular application key.\nNOTE: The key itself is ONLY provided on creation.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ApplicationKey"
+                        }
+                    }
+                }
+            },
+            "Org": {
+                "description": "Details about an Organization.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/OrgDetails"
+                            }
+                        }
+                    }
+                }
+            },
+            "PaginatedOrgsList": {
+                "description": "Paginated list of organizations.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "orgs": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/OrgDetails"
+                                    }
+                                },
+                                "count": {
+                                    "type": "integer",
+                                    "example": 39
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "TenantDataBundle": {
+                "description": "Aggregated data from the various tenant endpoints.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "licensesPurchased": {
+                                    "$ref": "#/components/schemas/LicensesPurchased"
+                                },
+                                "licensesUsed": {
+                                    "$ref": "#/components/schemas/LicensesUsed"
+                                },
+                                "adminLogins": {
+                                    "$ref": "#/components/schemas/AdminLogins"
+                                },
+                                "lastAdminLogin": {
+                                    "$ref": "#/components/schemas/LastAdminLogin"
+                                },
+                                "openIssues": {
+                                    "$ref": "#/components/schemas/OpenIssues"
+                                },
+                                "resolvedIssues": {
+                                    "$ref": "#/components/schemas/ResolvedIssues"
+                                },
+                                "applicationsScanned": {
+                                    "$ref": "#/components/schemas/ApplicationsScanned"
+                                },
+                                "maliciousSitesBlocked": {
+                                    "$ref": "#/components/schemas/MaliciousSitesBlocked"
+                                },
+                                "phishingSitesBlocked": {
+                                    "$ref": "#/components/schemas/PhishingSitesBlocked"
+                                },
+                                "protections": {
+                                    "$ref": "#/components/schemas/Protections"
+                                },
+                                "globalEnrollmentCodeUrl": {
+                                    "$ref": "#/components/schemas/GlobalEnrollmentCodeUrl"
+                                },
+                                "subscription": {
+                                    "$ref": "#/components/schemas/Subscription"
+                                },
+                                "dataRetentionMonths": {
+                                    "$ref": "#/components/schemas/DataRetentionMonths"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "description": "Tenant Data API",
+            "name": "Tenants"
+        },
+        {
+            "description": "Organization Data API",
+            "name": "Organizations"
+        },
+        {
+            "description": "Order processing API for tenants and organizations",
+            "name": "Orders"
+        },
+        {
+            "description": "Management API for tenants and organizations",
+            "name": "Management"
+        }
+    ],
+    "info": {
+        "version": "1.13.0",
+        "title": "Lookout Partner API",
+        "description": "Data, order processing, and management API for Lookout partners."
+    },
+    "openapi": "3.0.3",
+    "servers": [
+        {
+            "url": "https://partner.lookout.com"
+        },
+        {
+            "url": "https://partner.preprod.flexilis.com"
+        }
+    ]
+}

@@ -1,0 +1,3 @@
+[submodule "lookout-tui"]
+	path = lookout-tui
+	url = git@github.com:fgravato/LookoutWebActivityGO.git

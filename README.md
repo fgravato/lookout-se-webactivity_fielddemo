@@ -17,12 +17,13 @@ A comprehensive demonstration toolkit for Lookout's Web Activity Feed API and Mo
 - Valid Lookout API credentials (Application Key and Access Token)
 - AWS account (for S3 logging features)
 - Docker (optional, for containerized deployment)
+- Go 1.21+ (optional, for the Terminal UI)
 
 ## 🔧 Installation
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-org/lookout-se-webactivity_fielddemo.git
+   git clone https://github.com/fgravato/lookout-se-webactivity_fielddemo.git
    cd lookout-se-webactivity_fielddemo
    ```
 
@@ -78,6 +79,37 @@ For detailed instructions, see [README_TOKEN_AUTH.md](README_TOKEN_AUTH.md).
 python lookout_web_activity_feed.py
 ```
 
+### Web Activity Browser (GUI)
+
+```bash
+./setup_web_gui.sh
+source .venv/bin/activate
+python lookout_web_activity_gui.py
+```
+
+The script creates (or reuses) a virtual environment, upgrades pip, and pulls dependencies from `requirements.txt`. Override defaults with `VENV_DIR=/path/to/venv` or `PYTHON_BIN=python3.11` as needed.
+
+If you prefer manual installation, run:
+
+```bash
+pip install -r requirements.txt
+python lookout_web_activity_gui.py
+```
+
+Then browse to http://127.0.0.1:5000 (or the host/port you configure) and use the form to select a time range and apply keyword filters. The application reuses your existing environment variables for authentication.
+
+### Terminal UI (Go TUI)
+
+```bash
+cd lookout-tui
+cp .env.example .env   # fill in your credentials
+make build
+./bin/tui              # full interactive TUI
+./bin/cli              # CLI output mode
+```
+
+See [lookout-tui/README.md](lookout-tui/README.md) for keyboard controls, time window selection, and full setup instructions.
+
 ### Device Management
 
 ```bash
@@ -105,8 +137,10 @@ python lookout_s3_logger.py
 
 ### Core Modules
 
-- **`lookout_api_client.py`**: Enhanced API client with comprehensive error handling
+- **`lookout_api_client.py`**: Enhanced API client with configurable timeout and retry logic
 - **`lookout_web_activity_feed.py`**: Web activity feed monitoring
+- **`lookout_web_activity_gui.py`**: Flask web browser for web activity events (port 5000)
+- **`lookout_api_client_demo.py`**: Standalone demo client with simulated data (no live credentials needed)
 - **`device_manager_cli.py`**: Command-line device management interface
 - **`mra_event_reader.py`**: Mobile Risk API event stream reader
 - **`lookout_s3_logger.py`**: S3 logging service with automatic rotation
@@ -121,6 +155,9 @@ python lookout_s3_logger.py
 
 - **`mobilemesapi.json`**: Mobile Risk API OpenAPI specification
 - **`webaccessfeedapi.json`**: Web Access Feed API specification
+- **`swagger.json`**: Lookout Mobile Rights API OpenAPI 2.0 specification
+- **`web-api.swagger.json`**: Simplified web activity API specification
+- **`lookout-tui/`**: Go-based terminal UI application (source + Makefile)
 - **`docker/`**: Docker configuration files
 - **`systemd/`**: Systemd service files for production deployment
 
@@ -173,6 +210,8 @@ See [README_S3_LOGGING.md](README_S3_LOGGING.md) for detailed setup instructions
 - [Enhanced API Client Guide](README_ENHANCED_API_CLIENT.md)
 - [S3 Logging Setup](README_S3_LOGGING.md)
 - [POC Setup Guide](README_POC.md)
+- [Timeout & Retry Configuration](README_TIMEOUT_IMPROVEMENTS.md)
+- [Terminal UI Documentation](lookout-tui/README.md)
 
 ## 🔒 Security Considerations
 

@@ -273,7 +273,6 @@ class LookoutS3Logger:
                 failed_count = response.get('FailedPutCount', 0)
                 if failed_count > 0:
                     self.logger.warning(f"Failed to send {failed_count} records to Firehose")
-                    # TODO: Implement retry logic for failed records
                 
                 self.logger.info(f"Sent batch of {len(batch)} records to Firehose")
             

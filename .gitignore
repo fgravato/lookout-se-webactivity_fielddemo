@@ -93,3 +93,16 @@ Thumbs.db
 *.bak
 *.backup
 *~
+
+# lookout-tui compiled artifacts and secrets
+lookout-tui/.env
+lookout-tui/access_token.txt
+lookout-tui/bin/
+lookout-tui/tui
+lookout-tui/dist/
+
+# Internal planning docs
+Plans/
+
+# Large sample output files
+weboutput4.txt

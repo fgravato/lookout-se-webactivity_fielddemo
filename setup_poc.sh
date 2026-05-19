@@ -5,6 +5,19 @@
 
 set -e
 
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    if command -v python >/dev/null 2>&1; then
+        PYTHON_BIN=python
+    else
+        echo "ERROR: Unable to find a Python interpreter. Set PYTHON_BIN to point to one." >&2
+        exit 1
+    fi
+fi
+
+PIP_CMD="$PYTHON_BIN -m pip"
+
 echo "🚀 Lookout S3 POC Quick Setup"
 echo "============================="
 echo
@@ -35,11 +48,12 @@ fi
 
 echo
 echo "📦 Installing dependencies..."
-pip install -r requirements_poc.txt
+$PIP_CMD install --upgrade pip
+$PIP_CMD install -r requirements_poc.txt
 
 echo
 echo "🧪 Running POC..."
-python simple_s3_poc.py
+$PYTHON_BIN simple_s3_poc.py
 
 echo
 echo "🎉 POC Complete!"
